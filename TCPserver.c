@@ -76,7 +76,6 @@ void parkowanie(char rozkazIn, char* kluczIn, char* zajetoscParking, char* klucz
 
 
 
-
 int main(int argc, char *argv[])
 {
 	//Zmienne socket
@@ -84,7 +83,7 @@ int main(int argc, char *argv[])
 	int new_sockfd1, new_sockfd2;
 	int port_no1, port_no2;
 	int n1, n2;
-	char buffer[256], buffer1[256], buffer2[256];		//0-numer_miejsca, 1-rozkaz, 2-klucz
+	char buffer[256];		//0-numer_miejsca, 1-rozkaz, 2-klucz
 	socklen_t client_length1, client_length2;	//rozmiar adresów
 	
 	//Deklaracja struktur socket
@@ -101,8 +100,8 @@ int main(int argc, char *argv[])
 	//Sprawdzenie czy stworzono socket
 	if(sockfd1 == -1) error("BLAD otwarcia socket1 - APLIKACJA");
 	if(sockfd2 == -1) error("BLAD otwarcia socket2 - ROBOCORE");
-	if(setsockopt(sockfd1,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int))) error("setsockopt(SO_REUSERADDR fialed");
-	if(setsockopt(sockfd2,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int))) error("setsockopt(SO_REUSERADDR fialed");
+	if(setsockopt(sockfd1,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int))) error("setsockopt(BLAD uzycia SO_REUSERADDR\n");
+	if(setsockopt(sockfd2,SOL_SOCKET,SO_REUSEADDR,&(int){1},sizeof(int))) error("setsockopt(BLAD uzycia SO_REUSERADDR\n");	
 
 	//Czynności przygotowujące do bindowania
 	port_no1 = atoi(argv[1]); 				//Przypisanie numeru portu
@@ -131,7 +130,6 @@ int main(int argc, char *argv[])
 	char rozkazIn;
 	char kluczIn[256];
 	char rozkazOut;
-	char potwierdzenie;
 	char potwierdzenieOut;
 	char potwierdzenieIn;
 	
@@ -181,39 +179,38 @@ int main(int argc, char *argv[])
 		//Zerowanie buforów
 		bzero(kluczIn,256);
 		bzero(buffer,256);
-		bzero(buffer1,256);
-		bzero(buffer2,256);
+		bzero(buffer,256);
 		
 		//Dane o wolnych miejscach parkingowych
-		buffer1[0] = 'P';
-		buffer1[1] = Parking1.zajetosc;
-		buffer1[2] = Parking2.zajetosc;
-		buffer1[3] = Parking3.zajetosc;
-		buffer1[4] = Parking4.zajetosc;
-		buffer1[5] = Parking5.zajetosc;
-		buffer1[6] = Parking6.zajetosc;
-		printf("Wyslane dane : %s\n", buffer1);
+		buffer[0] = 'P';
+		buffer[1] = Parking1.zajetosc;
+		buffer[2] = Parking2.zajetosc;
+		buffer[3] = Parking3.zajetosc;
+		buffer[4] = Parking4.zajetosc;
+		buffer[5] = Parking5.zajetosc;
+		buffer[6] = Parking6.zajetosc;
+		printf("Wyslane dane : %s\n", buffer);
 		
 		//Wysłanie do aplikacji informacji o wolnych miejscach
-		n1 = write(new_sockfd1,buffer1,strlen(buffer1));
+		n1 = write(new_sockfd1,buffer,strlen(buffer));
 		if(n1 == -1) error("BLAD pisania do socket1 - APLIKACJA");
-		bzero(buffer1,256);
+		bzero(buffer,256);
 
 		//Odczyt danych z aplikacji
-		n1 = read(new_sockfd1, buffer1, 255);
+		n1 = read(new_sockfd1, buffer, 255);
 		if(n1 == -1) error("BLAD czytania z socket1 - APLIKACJA");
 		
-		numer = buffer1[0];
-		rozkazIn = buffer1[1];
-		kluczIn[0] = buffer1[2];
-		kluczIn[1] = buffer1[3];
-		kluczIn[2] =  buffer1[4];
+		numer = buffer[0];
+		rozkazIn = buffer[1];
+		kluczIn[0] = buffer[2];
+		kluczIn[1] = buffer[3];
+		kluczIn[2] =  buffer[4];
 		
-		printf("Otrzymane dane z aplikacji: %s", buffer1);
+		printf("Otrzymane dane z aplikacji: %s", buffer);
 		printf("Numer miejsca: %c \n", numer);
 		printf("Rozkaz: %c \n", rozkazIn);		//0-wyjazd, 1-parkuj
 		printf("Klucz: %s \n", kluczIn);
-		bzero(buffer1,256);
+		bzero(buffer,256);
 		
 		switch(numer){
 			case '1': 
@@ -246,48 +243,45 @@ int main(int argc, char *argv[])
 			break;
 		} 
 		
-		buffer1[0] = numer;
-		buffer1[1] = rozkazOut;
-		buffer1[2] = potwierdzenieOut;
+		buffer[0] = numer;
+		buffer[1] = rozkazOut;
+		buffer[2] = potwierdzenieOut;
 		printf("KOMENDY WYJSCIOWE \n");
 		printf("Numer: %c\n", numer);
 		printf("Rozkaz: %c\n", rozkazOut);
 		printf("Potwierdzenie: %c\n", potwierdzenieOut);
-		printf("Wyslane dane do robocore: %s\n", buffer1);
+		printf("Wyslane dane do robocore: %s\n", buffer);
 		printf("Oczekiwanie na wykonanie akcji przez robocore...\n");
-		strncpy(buffer2, buffer1, 256);
-		bzero(buffer1,256);
 		
 		//Wysłanie do robocore informacji dotyczących sterowania
-		n2 = write(new_sockfd2,buffer2,strlen(buffer2));
+		n2 = write(new_sockfd2,buffer,strlen(buffer));
 		if(n2 == -1) error("BLAD pisania do socket2 - ROBOCORE");
-		bzero(buffer2,256);
+		bzero(buffer,256);
 		
 		//Odczyt potwierdzenia wjazdu/wyjazdu z garażu od robocore
-		n2 = read(new_sockfd2, buffer2, 255);
+		n2 = read(new_sockfd2, buffer, 255);
 		if(n2 == -1) error("BLAD czytania z socket2 - ROBOCORE");
-		printf("Otrzymane dane od robocore: %s", buffer2);
-		potwierdzenieIn = buffer1[0];
-		buffer1[0] = buffer2[0];
-		bzero(buffer2,256);
+		printf("Otrzymane dane od robocore: %s", buffer);
+		potwierdzenieIn = buffer[0];
 				
 		//Dane o wolnych miejscach parkingowych
-		buffer1[1] = Parking1.zajetosc;
-		buffer1[2] = Parking2.zajetosc;
-		buffer1[3] = Parking3.zajetosc;
-		buffer1[4] = Parking4.zajetosc;
-		buffer1[5] = Parking5.zajetosc;
-		buffer1[6] = Parking6.zajetosc;
-		printf("Wyslane dane : %s\n", buffer1);
+		buffer[1] = Parking1.zajetosc;
+		buffer[2] = Parking2.zajetosc;
+		buffer[3] = Parking3.zajetosc;
+		buffer[4] = Parking4.zajetosc;
+		buffer[5] = Parking5.zajetosc;
+		buffer[6] = Parking6.zajetosc;
+		printf("Wyslane dane do aplikacji: %s\n", buffer);
 		
 		//Wysłanie do aplikacji informacji zakończeniu akcji
-		n1 = write(new_sockfd1,buffer1,strlen(buffer1));
+		n1 = write(new_sockfd1,buffer,strlen(buffer));
 		if(n1 == -1) error("BLAD pisania do socket1 - APLIKACJA\n\n");
-		bzero(buffer1,256);
+		bzero(buffer,256);
+		
 				
 		//Synchronizacja danych zgodnie z sygnalem zwrotnym od robocore
 		if (potwierdzenieIn == '1'){		//akcja udana
-			//Zapis nowych danych do pliku		
+			//Zapis nowych danych do pliku	
 			if ((database=fopen("database.txt", "w")) != NULL){
 				piszPlik(database, Parking1.numer, Parking1.zajetosc, Parking1.klucz);
 				piszPlik(database, Parking2.numer, Parking2.zajetosc, Parking2.klucz);

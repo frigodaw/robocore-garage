@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 	//Rozpoczęcie komunikacji, oczyt informacji o wolnych miejscach parkingowych
 	n = read(sockfd, buffer,255);
 	if(n == -1) error("BLAD odczytu z socketa");
-	printf("Otrzymane potwierdzenie parkowania: %s\n",buffer);
+	printf("Stan parkingu: %s\n",buffer);
 	bzero(buffer,256);
 	
 	//Wyslanie rozkazu do serwera
